@@ -1,12 +1,16 @@
+
+import logging
+import json
+import os
 from flask import Flask, request, redirect, url_for, session, render_template, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from logHandle import log_login_attempt
+from usersHandle import load_users, save_users
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
 
-# Simple in-memory "database"
-users = {"demo": generate_password_hash("Demo1234!")}  # username -> password_hash
-
+users = load_users()
 
 @app.route("/")
 def index():
@@ -20,15 +24,18 @@ def login():
         password = request.form.get("password", "")
 
         if username not in users:
+            log_login_attempt(username, False)
             flash("User does not exist.")
             return redirect(url_for("login"))
 
         stored_hash = users[username]
         if not check_password_hash(stored_hash, password):
+            log_login_attempt(username, False)
             flash("Wrong password.")
             return redirect(url_for("login"))
 
         session["username"] = username
+        log_login_attempt(username, True)
         flash("Logged in successfully.")
         return redirect(url_for("index"))
 
@@ -48,11 +55,14 @@ def register():
         if username in users:
             flash("Username already taken.")
             return redirect(url_for("register"))
-
+    
         password_hash = generate_password_hash(password)
         users[username] = password_hash
 
-        flash("Registered successfully, you can now log in.")
+        #save new user to JSON file
+        save_users(users)
+
+        flash("Registered successfully, you can now log in.", "success")
         return redirect(url_for("login"))
 
     return render_template("register.html")
