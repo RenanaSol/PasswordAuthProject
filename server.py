@@ -7,6 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from logHandle import log_login_attempt
 from usersHandle import load_users, save_users
 
+GROUP_SEED = 3976056
+
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
 
@@ -24,18 +26,24 @@ def login():
         password = request.form.get("password", "")
 
         if username not in users:
-            log_login_attempt(username, False)
+            log_login_attempt(username, False, GROUP_SEED)
             flash("User does not exist.")
             return redirect(url_for("login"))
 
-        stored_hash = users[username]
+        user_data = users[username]
+        stored_hash = user_data["password_hash"]
+        user_seed = user_data["group_seed"]
+
+
         if not check_password_hash(stored_hash, password):
-            log_login_attempt(username, False)
+            log_login_attempt(username, False, GROUP_SEED)
             flash("Wrong password.")
             return redirect(url_for("login"))
 
         session["username"] = username
-        log_login_attempt(username, True)
+        session["group_seed"] = user_seed
+        
+        log_login_attempt(username, True, GROUP_SEED)
         flash("Logged in successfully.")
         return redirect(url_for("index"))
 
