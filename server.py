@@ -1,16 +1,22 @@
 
-import logging
-import json
 import os
+import time
+from collections import defaultdict, deque
 from flask import Flask, request, redirect, url_for, session, render_template, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from logHandle import log_login_attempt
 from usersHandle import load_users, save_users
+from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
+from loginDefence.lockout.accountLockout import AccountLockoutManager
 
 GROUP_SEED = 3976056
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
+
+login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
+
+lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
 
 users = load_users()
 
@@ -22,8 +28,24 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        userIP = request.remote_addr or "unknown"
+        key = userIP 
+       
+
+        # rate limiting check
+        #if not login_rate_limiter.allow(key):
+        #    flash("Too many login attempts. Please try again later.")
+        #    return redirect(url_for("login"))
+        
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+
+        lockout_key = username
+        if lockout_manager.is_locked(lockout_key):
+            remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
+            flash(f"Account is temporarily locked due to too many failed attempts. "
+                   f"Please wait {remaining} seconds and try again.", "danger")
+            return redirect(url_for("login"))
 
         if username not in users:
             log_login_attempt(username, False, GROUP_SEED)
@@ -31,20 +53,28 @@ def login():
             return redirect(url_for("login"))
 
         user_data = users[username]
-        stored_hash = user_data["password_hash"]
-        user_seed = user_data["group_seed"]
+
+        if isinstance(user_data, str):
+            # For backward compatibility with simple password hash storage
+            stored_hash = user_data
+            user_group_seed = GROUP_SEED
+        else:
+            stored_hash = user_data.get("password_hash", "")
+            user_group_seed = user_data.get("group_seed", GROUP_SEED)
 
 
         if not check_password_hash(stored_hash, password):
             log_login_attempt(username, False, GROUP_SEED)
+            lockout_manager.register_failure(lockout_key)
             flash("Wrong password.")
             return redirect(url_for("login"))
 
         session["username"] = username
-        session["group_seed"] = user_seed
+        session["group_seed"] = user_group_seed
         
-        log_login_attempt(username, True, GROUP_SEED)
+        log_login_attempt(username, True, user_group_seed)
         flash("Logged in successfully.")
+        lockout_manager.register_success(lockout_key)
         return redirect(url_for("index"))
 
     return render_template("login.html")
