@@ -1,3 +1,31 @@
 {"timestamp": "2025-12-02T11:00:24.073141", "username": "user", "success": false}
 {"timestamp": "2025-12-02T11:01:12.824719", "username": "user", "success": true}
 {"timestamp": "2025-12-02T11:18:32.911833", "username": "user", "success": true}
+{"timestamp": "2025-12-13T17:54:19.321609", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:11:08.062416", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:16:34.219297", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:18:22.334021", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:20:44.516723", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:21:00.963340", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:36:22.581191", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T18:41:50.849197", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T18:43:15.725970", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T19:01:42.470891", "username": "easy2", "success": false}
+{"timestamp": "2025-12-13T20:54:10.731073", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T20:55:53.477768", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T20:58:46.902305", "username": "easy1", "success": false}
+{"timestamp": "2025-12-13T21:48:26.615430", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T21:51:35.078463", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T21:52:32.741862", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T22:03:55.863568", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T22:05:54.776187", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T22:07:25.886158", "username": "easy1", "success": true}
+{"timestamp": "2025-12-13T22:13:07.341667", "username": "easy1", "success": false}
+{"timestamp": "2025-12-16T23:00:19.518663", "username": "easy1", "success": false}
+{"timestamp": "2025-12-16T23:17:51.705779", "username": "easy1", "success": false}
+{"timestamp": "2025-12-16T23:18:23.233276", "username": "easy1", "success": false}
+{"timestamp": "2025-12-18T16:18:14.040303", "username": "easy1", "success": true, "latency_ms": 267.8090420085937, "has_pepper": false, "hash_mode": "bcrypt"}
+{"timestamp": "2025-12-18T16:20:13.748755", "username": "easy1", "success": false, "latency_ms": 238.51637500047218, "has_pepper": false, "hash_mode": "bcrypt_pepper"}
+{"timestamp": "2025-12-18T16:22:32.298468", "username": "easy1", "success": true, "latency_ms": 42.41270800412167, "has_pepper": false, "hash_mode": "argon2_pepper"}
+{"timestamp": "2025-12-18T18:02:47.572082", "username": "easy1", "success": true, "latency_ms": 269.8230420064647, "has_pepper": false, "hash_mode": "bcrypt_pepper"}
+{"timestamp": "2025-12-18T18:20:30.072295", "username": "easy1", "success": true, "latency_ms": 246.47929199272767, "has_pepper": false, "hash_mode": "bcrypt_pepper"}
