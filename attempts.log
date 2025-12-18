@@ -29,3 +29,34 @@
 {"timestamp": "2025-12-18T16:22:32.298468", "username": "easy1", "success": true, "latency_ms": 42.41270800412167, "has_pepper": false, "hash_mode": "argon2_pepper"}
 {"timestamp": "2025-12-18T18:02:47.572082", "username": "easy1", "success": true, "latency_ms": 269.8230420064647, "has_pepper": false, "hash_mode": "bcrypt_pepper"}
 {"timestamp": "2025-12-18T18:20:30.072295", "username": "easy1", "success": true, "latency_ms": 246.47929199272767, "has_pepper": false, "hash_mode": "bcrypt_pepper"}
+{"timestamp": "2025-12-08T16:00:38.300818", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:00:40.572385", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:08:55.186609", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:08:59.527278", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:09:55.586704", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:09:56.394950", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:09:57.700288", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:09:58.848370", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:09:59.898634", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:12:25.488860", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:12:27.325138", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:13:02.257974", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:13:18.508673", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:18:30.031316", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T16:18:40.265963", "username": "user", "success": true, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:22:56.563283", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:07.696277", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:09.091407", "username": "user", "success": true, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:35.125986", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:39.108493", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:43.379261", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:47.021729", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:23:50.553658", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:24:04.769541", "username": "kfgjvmc", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:24:08.848945", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:24:24.860200", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:24:33.042198", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T17:26:08.387672", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T18:57:27.643512", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T18:57:32.361545", "username": "user", "success": false, "group_seed": 3976056}
+{"timestamp": "2025-12-08T18:57:37.048348", "username": "user", "success": false, "group_seed": 3976056}
