@@ -1,24 +1,60 @@
 
-import os
-import time
+
+import logging
+import json
+import sqlite3
 from collections import defaultdict, deque
 from flask import Flask, request, redirect, url_for, session, render_template, flash
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import  check_password_hash
 from logHandle import log_login_attempt
 from usersHandle import load_users, save_users
+from argon2.exceptions import VerifyMismatchError
 from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
 from loginDefence.lockout.accountLockout import AccountLockoutManager
-
+from hash.verifyPassword import *
+from hash.hashPassword import *
 GROUP_SEED = 3976056
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
 
-login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
+DB_FILE = "db/users.db"
+CONFIG_FILE = "config.json"
 
-lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
+# load config
+config = json.load(open(CONFIG_FILE))
 
-users = load_users()
+hash_type = "bcrypt_pepper"
+
+
+protection_flag = ""
+
+
+
+
+
+def get_user_from_db(username,hash_type ):
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT username, password_hash, salt, hash_type
+        FROM users
+        WHERE 
+        username = ?
+       and hash_type  = ?        
+    """, (username, hash_type))
+
+    row = cursor.fetchone()
+    
+    conn.close()
+
+    if row is None:
+        return None 
+
+    return dict(row)
+
 
 @app.route("/")
 def index():
@@ -30,51 +66,74 @@ def login():
     if request.method == "POST":
         userIP = request.remote_addr or "unknown"
         key = userIP 
+        is_pepper = False
        
+        if protection_flag == "CAPTCHA":
+            print ("")
 
-        # rate limiting check
-        #if not login_rate_limiter.allow(key):
-        #    flash("Too many login attempts. Please try again later.")
-        #    return redirect(url_for("login"))
+        elif protection_flag == "TOTP":
+            print ("")
+
+        elif protection_flag == "RATE_LIMIT":
+            login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
+            if not login_rate_limiter.allow(key):
+                flash("Too many login attempts. Please try again later.")
+                return redirect(url_for("login"))
+            
+        elif protection_flag == "LOCKOUT":
+            lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
+            
+        elif protection_flag == "PEPPER":
+            is_pepper = True
+        
+
         
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-
         lockout_key = username
-        if lockout_manager.is_locked(lockout_key):
+
+
+
+        PEPPER = config.get("pepper", "default-secret-pepper")
+        userdetails = get_user_from_db (username, hash_type ) 
+        
+        if userdetails is None:
+            log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
+            flash("User does not exist.")
+            return redirect(url_for("login"))   
+        
+        try:     
+            result , latency_ms  = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
+            if not result:
+                log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
+                flash("Wrong password.")               
+                
+                if protection_flag == "LOCKOUT":
+                    lockout_manager.register_failure(lockout_key)
+                    if lockout_manager.is_locked(lockout_key):
+                        remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
+                        flash(f"Account is temporarily locked due to too many failed attempts. "
+                        f"Please wait {remaining} seconds and try again.", "danger")
+                return redirect(url_for("login"))
+            
+        except VerifyMismatchError:  
+            log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
+        except Exception as e: 
+            logging.error(f"Error verifying password for {username}: {e}")
+            flash("An error occurred. Please try again.")
+            return redirect(url_for("login"))
+
+       
+        """   if lockout_manager.is_locked(lockout_key):
             remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
             flash(f"Account is temporarily locked due to too many failed attempts. "
                    f"Please wait {remaining} seconds and try again.", "danger")
-            return redirect(url_for("login"))
-
-        if username not in users:
-            log_login_attempt(username, False, GROUP_SEED)
-            flash("User does not exist.")
-            return redirect(url_for("login"))
-
-        user_data = users[username]
-
-        if isinstance(user_data, str):
-            # For backward compatibility with simple password hash storage
-            stored_hash = user_data
-            user_group_seed = GROUP_SEED
-        else:
-            stored_hash = user_data.get("password_hash", "")
-            user_group_seed = user_data.get("group_seed", GROUP_SEED)
-
-
-        if not check_password_hash(stored_hash, password):
-            log_login_attempt(username, False, GROUP_SEED)
-            lockout_manager.register_failure(lockout_key)
-            flash("Wrong password.")
-            return redirect(url_for("login"))
-
-        session["username"] = username
-        session["group_seed"] = user_group_seed
-        
-        log_login_attempt(username, True, user_group_seed)
+            return redirect(url_for("login"))"""
+     
+        log_login_attempt(username,True,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
         flash("Logged in successfully.")
-        lockout_manager.register_success(lockout_key)
+        if protection_flag == "LOCKOUT":
+            lockout_manager.register_success(lockout_key)
         return redirect(url_for("index"))
 
     return render_template("login.html")
@@ -90,20 +149,39 @@ def register():
             flash("Username and password are required.")
             return redirect(url_for("register"))
 
-        if username in users:
-            flash("Username already taken.")
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+
+        
+        cursor.execute("""
+            SELECT 1 FROM users
+            WHERE username = ? AND hash_type = ?
+        """, (username, hash_type))
+
+        exists = cursor.fetchone() is not None
+
+        if exists:
+            conn.close()
+            flash("User already exists.")
             return redirect(url_for("register"))
-    
-        password_hash = generate_password_hash(password)
-        users[username] = password_hash
 
-        #save new user to JSON file
-        save_users(users)
+        
+        password_hash, salt = hash_password_with_pepper(password, hash_type)
 
-        flash("Registered successfully, you can now log in.", "success")
+        cursor.execute("""
+            INSERT INTO users (username, password_hash, salt, hash_type)
+            VALUES (?, ?, ?, ?)
+        """, (username, password_hash, salt, hash_type))
+
+        conn.commit()
+        conn.close()
+
+        flash("Registered successfully, you can now log in.")
         return redirect(url_for("login"))
 
     return render_template("register.html")
+
+
 
 
 @app.route("/logout")

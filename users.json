@@ -1,3 +1,35 @@
 {
-    "user": "scrypt:32768:8:1$cj81rCrPJVkWcSrv$2ce40c72516850665fe8b03aab300c01246b9f26fe564a0b43bb6d75ae6d765a7c2c1424ace94d0ae15c168bf5d499d5a7b7c0aa810e21a282b24279599c009a"
+  "easy1": "password",
+  "easy2": "12345",
+  "easy3": "qwerty",
+  "easy4": "111111",
+  "easy5": "hello",
+  "easy6": "easy6",
+  "easy7": "welcome",
+  "easy8": "iloveyou",
+  "easy9": "admin",
+  "easy10": "000000",
+
+  "medium1": "Password123",
+  "medium2": "Summer2025",
+  "medium3": "HelloWorld!",
+  "medium4": "Login1234",
+  "medium5": "MyPass99",
+  "medium6": "admin543210",
+  "medium7": "Secure12",
+  "medium8": "Loginlog!!",
+  "medium9": "UserPass7!7",
+  "medium10": "hello1234&",
+
+  "strong1": "gshbdskjsJDKskdn",
+  "strong2": "X$4M!eQ8@Zp*L",
+  "strong3": "GDSJFHDhsbsb!@#$",
+  "strong4": "13242553625735253716",
+  "strong5": "daghGVAHGSVagsv1263562",
+  "strong6": "SGDVAgahvdhgvAPDQRovd",
+  "strong7": "R8#@Z!L2kP9VSH4#sbH",
+  "strong8": "spenmakDsksjaaAhs82619",
+  "strong9": "BSAHBansaaka@&**!@",
+  "strong10": "9283924670286528"
+   
 }
