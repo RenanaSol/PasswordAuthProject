@@ -5,7 +5,7 @@ USERS_FILE = "users.json"
 
 def load_users():
     if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, "w") as f:
+        with open(USERS_FILE, "a") as f:
             json.dump({}, f)
         return {}
     
@@ -13,5 +13,5 @@ def load_users():
         return json.load(f)
 
 def save_users(users):
-    with open(USERS_FILE, "w") as f:
+    with open(USERS_FILE, "a") as f:
         json.dump(users, f, indent=4)
