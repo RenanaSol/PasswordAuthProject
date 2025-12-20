@@ -1,5 +1,9 @@
 {
-  "user1": "password",
+  "user1": {
+    "password": "password",
+    "totp_secret": "JBSWY3DPEHPK3PXP",
+    "group_seed": 3976056
+  },
   "user2": "12345",
   "john": "qwerty",
   "alice": "111111",

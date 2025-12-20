@@ -11,7 +11,6 @@
                     <p class="lead">
                         Hello, <strong>{{ session['username'] }}</strong>! You are logged in.
                     </p>
-                    <a href="{{ url_for('secret') }}" class="btn btn-primary me-2">Go to Secret Page</a>
                     <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Logout</a>
                 {% else %}
                     <p class="lead">You are not logged in.</p>
