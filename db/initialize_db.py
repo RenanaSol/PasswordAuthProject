@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import json
 import bcrypt 
@@ -13,9 +14,9 @@ USERS_JSON = "users.json"
 with open(USERS_JSON, "r") as f:
     users = json.load(f)
 
-DB_FILE = "users.db"
+DB_FILE = "db/users.db"
 CONFIG_FILE = "config.json"
-import os
+
 print("Using DB file at:", os.path.abspath(DB_FILE))
 
 hashTyps= ["argon2","bcrypt","sha256_salt"]
@@ -37,7 +38,6 @@ def bcrypt_with_hmac_sha384(password: str, pepper: str, cost: int = 12) -> str:
     
     prehash = base64.b64encode(hmac_digest)
 
-    # bcrypt hash
     bcrypt_hash = bcrypt.hashpw(
         prehash,
         bcrypt.gensalt(rounds=cost)
@@ -79,11 +79,10 @@ def hash_password_without_pepper(password,method):
 conn = sqlite3.connect(DB_FILE)
 cursor = conn.cursor()
 cursor.execute("DELETE FROM users;")
+cursor.execute("DELETE FROM sqlite_sequence WHERE name='users';")
 conn.commit()
 for username, password in users.items():
-    for h in hashTyps:
-
-        
+    for h in hashTyps:   
         hashed, salt, hash_type = hash_password_with_pepper(password, h)
 
         cursor.execute("""

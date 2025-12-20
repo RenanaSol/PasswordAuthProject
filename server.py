@@ -26,7 +26,6 @@ config = json.load(open(CONFIG_FILE))
 
 hash_type = "bcrypt_pepper"
 
-
 protection_flag = ""
 
 
