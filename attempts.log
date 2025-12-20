@@ -1,3 +1,0 @@
-{"timestamp": "2025-12-19T12:29:31.887254", "username": "easy1", "result": true, "latency_ms": 275.31191700836644, "has_pepper": false, "hash_mode": "bcrypt_pepper", "protection_flag": "", "group_seed": 3976056}
-{"timestamp": "2025-12-19T12:29:52.769851", "username": "easy1", "result": true, "latency_ms": 265.9425000019837, "has_pepper": false, "hash_mode": "bcrypt_pepper", "protection_flag": "", "group_seed": 3976056}
-{"timestamp": "2025-12-19T12:31:05.700370", "username": "easy1", "result": true, "latency_ms": 270.74274999904446, "has_pepper": false, "hash_mode": "bcrypt_pepper", "protection_flag": "", "group_seed": 3976056}
