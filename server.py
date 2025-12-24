@@ -3,6 +3,7 @@ import time
 import json
 import sqlite3
 import uuid
+import os
 from collections import defaultdict, deque
 from flask import Flask, request, redirect, url_for, session, render_template, flash, jsonify
 from werkzeug.security import  check_password_hash
@@ -31,12 +32,14 @@ CONFIG_FILE = "config.json"
 # load config
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "bcrypt_pepper"
+hash_type = "bcrypt"
 
 protection_flag = "CAPTCHA"
 totp_manager = TOTPManager(interval=30, digits=6)
+login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
+lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
 
-protection_flag = ""
+protection_flag = "TOTP"
 
 def get_user_from_db(username,hash_type ):
     conn = sqlite3.connect(DB_FILE)
@@ -80,12 +83,11 @@ def get_captcha_token():
 def login():
     if request.method == "POST":
         userIP = request.remote_addr or "unknown"
-        key = userIP 
         is_pepper = False
         captcha_token = ""
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        lockout_key = username
+        lockout_key = f"{username}:{userIP}"
        
        
         if protection_flag == "CAPTCHA":
@@ -97,29 +99,33 @@ def login():
                         flash("CAPTCHA required")
                         return redirect(url_for("login"))
                     VALID_CAPTCHA_TOKENS.remove(captcha_token)
+        
+
+        if protection_flag == "LOCKOUT":
+            if lockout_manager.is_locked(lockout_key):
+                remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
+                flash(
+                    f"Your account: {username} is temporarily locked due to too many failed attempts. "
+                    f"Please wait {remaining} seconds and try again.",
+                    "danger"
+                )
+                latency_ms = 0
+                log_login_attempt(username, False, latency_ms, is_pepper, hash_type, protection_flag, GROUP_SEED)
+                return redirect(url_for("login"))
+    
+        elif protection_flag == "CAPTCHA":
+            print ("")
 
         elif protection_flag == "TOTP":
             print ("")
 
         elif protection_flag == "RATE_LIMIT":
-            login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
-            if not login_rate_limiter.allow(key):
+            if not login_rate_limiter.allow(lockout_key):
                 flash("Too many login attempts. Please try again later.")
                 return redirect(url_for("login"))
             
-        elif protection_flag == "LOCKOUT":
-            lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
-            
         elif protection_flag == "PEPPER":
             is_pepper = True
-        
-
-        
-
-       
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        lockout_key = username
 
         PEPPER = config.get("pepper", "default-secret-pepper")
         userdetails = get_user_from_db (username, hash_type ) 
@@ -134,25 +140,20 @@ def login():
 
         try:     
             result , latency_ms  = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
-            if not result:
-                log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
-                flash("Wrong password.")               
-                
+            if not result:              
                 if protection_flag == "LOCKOUT":
                     lockout_manager.register_failure(lockout_key)
                     if lockout_manager.is_locked(lockout_key):
                         remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
-                        flash(f"Account is temporarily locked due to too many failed attempts. "
+                        flash(f"Your account: {username} is temporarily locked due to too many failed attempts. "
                         f"Please wait {remaining} seconds and try again.", "danger")
-                    
-            
 
-                if protection_flag == "CAPTCHA":                       
-                    failed_attempts_captcha[username] = failed_attempts_captcha.get(username, 0) + 1                   
-
+                elif protection_flag == "CAPTCHA":                       
+                    failed_attempts_captcha[username] = failed_attempts_captcha.get(username, 0) + 1   
                     
-
-                    
+                        
+                log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
+                flash("Wrong password.")
                 return redirect(url_for("login"))
         except VerifyMismatchError:  
             log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
@@ -176,9 +177,11 @@ def login():
             flash("Password verified. Please enter your TOTP code.", "info")
             return redirect(url_for("login_totp"))
         
+        session["username"] = username
+        session["group_seed"] = GROUP_SEED
         return redirect(url_for("index"))
 
-    #return render_template("login.html")
+    return render_template("login.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -208,7 +211,7 @@ def register():
             return redirect(url_for("register"))
 
         
-        password_hash, salt = hash_password_with_pepper(password, hash_type)
+        password_hash, salt, returned_hash_type = hash_password_with_pepper(password, hash_type)
 
         cursor.execute("""
             INSERT INTO users (username, password_hash, salt, hash_type)

@@ -1,7 +1,31 @@
-# PasswordAuthProject
+# passwordAuthProject
+
+A clean and simple web app demonstrating user registration, login, logout, and a protected page using Python’s Flask framework.
+
+**Features**
+- **Password hashing & verification**: secure password hashing utilities in `hash/`.
+- **TOTP**: Time-based one-time password support in `loginDefence/totp/`.
+- **Rate limiting & token bucket**: per-IP and per-account throttling in `loginDefence/rateLimit/`.
+- **Account lockout**: account lockout policies in `loginDefence/lockout/`.
+- **DB initialization**: lightweight DB setup in `db/initialize_db.py`.
+
+**Repository layout (important files)**
+- `server.py`: Main application entrypoint (starts the auth server).
+- `config.json`: Configuration for app settings (ports, rate limits, secrets).
+- `users.json`: Simple user store used by the demo.
+- `usersHandle.py`, `logHandle.py`: helpers for user and logging operations.
+- `hash/`: password hashing and verification helpers.
+- `loginDefence/`: defence mechanisms (rate limiting, lockout, TOTP).
+- `db/`: DB initialization scripts.
+- `attackScripts/`: example attack scripts for testing (brute force, password spraying).
+
+**Requirements**
+- Python 3.8+
 
 
-A clean and simple web app demonstrating **user registration**, **login**, **logout**, and a **protected page** using Python’s Flask framework.
+Security notes
+- This project is a learning system.
+
 
 ## ✨ Features
 
@@ -53,7 +77,7 @@ python servey.py
 App runs at:
 
 ```
-http://127.0.0.1:5000/
+http://127.0.0.1:8000/
 ```
 
 ---
@@ -81,7 +105,6 @@ http://127.0.0.1:5000/
 Uses hashed passwords:
 
 ```python
-generate_password_hash(password)
 check_password_hash(stored_hash, input)
 ```
 
@@ -95,19 +118,3 @@ Uses Jinja2 with template inheritance:
 {% extends "layout.html" %}
 {% block content %}{% endblock %}
 ```
-
----
-
-## 🔧 Future Improvements
-
-- Use SQLite/PostgreSQL instead of dictionary  
-- Add Bootstrap styling  
-- Add user roles  
-- Add email-based authentication  
-- Add rate limiting
-
----
-
-## 📜 License
-
-Free for learning and modification.
