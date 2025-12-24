@@ -1,6 +1,5 @@
-
-
 import logging
+import time
 import json
 import sqlite3
 import uuid
@@ -12,6 +11,7 @@ from usersHandle import load_users, save_users
 from argon2.exceptions import VerifyMismatchError
 from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
 from loginDefence.lockout.accountLockout import AccountLockoutManager
+from loginDefence.totp.totp_manager import TOTPManager
 from hash.verifyPassword import *
 from hash.hashPassword import *
 from loginDefence.captcha.captchaManager import CaptchaManager
@@ -23,7 +23,7 @@ GROUP_SEED = 3976056
 CAPTCHA_THRESHOLD = 3
 
 app = Flask(__name__)
-app.secret_key = "change-this-secret-key"
+app.secret_key = "mysecret"
 
 DB_FILE = "db/users.db"
 CONFIG_FILE = "config.json"
@@ -34,10 +34,9 @@ config = json.load(open(CONFIG_FILE))
 hash_type = "bcrypt_pepper"
 
 protection_flag = "CAPTCHA"
+totp_manager = TOTPManager(interval=30, digits=6)
 
-
-
-
+protection_flag = ""
 
 def get_user_from_db(username,hash_type ):
     conn = sqlite3.connect(DB_FILE)
@@ -118,11 +117,15 @@ def login():
         
 
        
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        lockout_key = username
 
         PEPPER = config.get("pepper", "default-secret-pepper")
         userdetails = get_user_from_db (username, hash_type ) 
         
         if userdetails is None:
+            latency_ms = 0
             log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
             flash("User does not exist.")
             return redirect(url_for("login"))   
@@ -157,13 +160,6 @@ def login():
             logging.error(f"Error verifying password for {username}: {e}")
             flash("An error occurred. Please try again.")
             return redirect(url_for("login"))
-
-       
-        """   if lockout_manager.is_locked(lockout_key):
-            remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
-            flash(f"Account is temporarily locked due to too many failed attempts. "
-                   f"Please wait {remaining} seconds and try again.", "danger")
-            return redirect(url_for("login"))"""
      
         log_login_attempt(username,True,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
         flash("Logged in successfully.")
@@ -173,9 +169,16 @@ def login():
 
         if protection_flag == "CAPTCHA":
                 failed_attempts_captcha[username] = 0
+        
+        elif protection_flag == "TOTP":
+            session["pending_2fa_user"] = username
+            session["pending_2fa_seed"] = GROUP_SEED
+            flash("Password verified. Please enter your TOTP code.", "info")
+            return redirect(url_for("login_totp"))
+        
         return redirect(url_for("index"))
 
-    return render_template("login.html")
+    #return render_template("login.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -220,9 +223,6 @@ def register():
 
     return render_template("register.html")
 
-
-
-
 @app.route("/logout")
 def logout():
     session.pop("username", None)
@@ -230,13 +230,44 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/secret")
-def secret():
-    if "username" not in session:
-        flash("You must be logged in to see that page.")
+@app.route("/login_totp", methods=["GET", "POST"])
+def login_totp():
+    pending_user = session.get("pending_2fa_user")
+    if not pending_user:
+        flash("Please login with username and password first.", "warning")
         return redirect(url_for("login"))
-    return render_template("secret.html")
+    
+    userdetails = load_users()
+    user_record = userdetails.get(pending_user)
+    if not user_record or not isinstance(user_record, dict):
+        flash("User not found.", "danger")
+        session.pop("pending_2fa_user", None)
+        return redirect(url_for("login"))
+    
+    totp_secret = user_record.get("totp_secret")
+    if not totp_secret:
+        flash("Missing totp_secret for this user.", "danger")
+        session.pop("pending_2fa_user", None)
+        return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        token = request.form.get("totp", "").strip()
 
+        # Verify TOTP
+        server_now = time.time()
+        if not totp_manager.verify(totp_secret, token, server_time=server_now, valid_window=1):
+            flash("Invalid TOTP code.", "danger")
+            return redirect(url_for("login_totp"))
+    
+        #Success: finalize login
+        session.pop("pending_2fa_user", None)
+        session["username"] = pending_user
+        session["group_seed"] = session.pop("pending_2fa_seed", GROUP_SEED)
+
+        flash("Logged in successfully (2FA).", "success")
+        return redirect(url_for("index"))
+
+    return render_template("login_totp.html")
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
