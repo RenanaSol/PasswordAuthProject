@@ -3,8 +3,9 @@
 import logging
 import json
 import sqlite3
+import uuid
 from collections import defaultdict, deque
-from flask import Flask, request, redirect, url_for, session, render_template, flash
+from flask import Flask, request, redirect, url_for, session, render_template, flash, jsonify
 from werkzeug.security import  check_password_hash
 from logHandle import log_login_attempt
 from usersHandle import load_users, save_users
@@ -13,7 +14,13 @@ from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
 from loginDefence.lockout.accountLockout import AccountLockoutManager
 from hash.verifyPassword import *
 from hash.hashPassword import *
+from loginDefence.captcha.captchaManager import CaptchaManager
+
+VALID_CAPTCHA_TOKENS = set()
+captcha_mgr = CaptchaManager(threshold=3)
+failed_attempts_captcha = {}
 GROUP_SEED = 3976056
+CAPTCHA_THRESHOLD = 3
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
@@ -26,7 +33,7 @@ config = json.load(open(CONFIG_FILE))
 
 hash_type = "bcrypt_pepper"
 
-protection_flag = ""
+protection_flag = "CAPTCHA"
 
 
 
@@ -59,6 +66,16 @@ def get_user_from_db(username,hash_type ):
 def index():
     return render_template("index.html")
 
+@app.route('/admin/get_captcha_token', methods=['GET'])
+def get_captcha_token():
+   
+    seed = request.args.get('group_seed')
+    if seed != GROUP_SEED:
+        return jsonify({"error": "Unauthorized seed"}), 403
+    
+    new_token = f"token_{int(time.time()*1000)}"
+    VALID_CAPTCHA_TOKENS.add(new_token)
+    return jsonify({"captcha_token": new_token})
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -66,9 +83,21 @@ def login():
         userIP = request.remote_addr or "unknown"
         key = userIP 
         is_pepper = False
+        captcha_token = ""
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        lockout_key = username
+       
        
         if protection_flag == "CAPTCHA":
-            print ("")
+            captcha_token = request.form.get('captcha_token')
+            attempts = failed_attempts_captcha.get(username, 0)
+            if attempts >= CAPTCHA_THRESHOLD:
+                    flash("CAPTCHA required")
+                    if not captcha_token or captcha_token not in VALID_CAPTCHA_TOKENS:
+                        flash("CAPTCHA required")
+                        return redirect(url_for("login"))
+                    VALID_CAPTCHA_TOKENS.remove(captcha_token)
 
         elif protection_flag == "TOTP":
             print ("")
@@ -87,11 +116,8 @@ def login():
         
 
         
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        lockout_key = username
 
-
+       
 
         PEPPER = config.get("pepper", "default-secret-pepper")
         userdetails = get_user_from_db (username, hash_type ) 
@@ -101,6 +127,8 @@ def login():
             flash("User does not exist.")
             return redirect(url_for("login"))   
         
+    
+
         try:     
             result , latency_ms  = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
             if not result:
@@ -113,8 +141,16 @@ def login():
                         remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
                         flash(f"Account is temporarily locked due to too many failed attempts. "
                         f"Please wait {remaining} seconds and try again.", "danger")
-                return redirect(url_for("login"))
+                    
             
+
+                if protection_flag == "CAPTCHA":                       
+                    failed_attempts_captcha[username] = failed_attempts_captcha.get(username, 0) + 1                   
+
+                    
+
+                    
+                return redirect(url_for("login"))
         except VerifyMismatchError:  
             log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
         except Exception as e: 
@@ -131,8 +167,12 @@ def login():
      
         log_login_attempt(username,True,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
         flash("Logged in successfully.")
+
         if protection_flag == "LOCKOUT":
             lockout_manager.register_success(lockout_key)
+
+        if protection_flag == "CAPTCHA":
+                failed_attempts_captcha[username] = 0
         return redirect(url_for("index"))
 
     return render_template("login.html")
