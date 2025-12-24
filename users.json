@@ -50,6 +50,8 @@
     "group_seed": 3976056
   },
 
+
+
   "charlie": {
     "password": "Password123",
     "totp_secret": "KJXXEZDENFZSAYJA",
@@ -66,7 +68,7 @@
     "group_seed": 3976056
   },
   "nina": {
-    "password": "Login1234",
+    "password": "NiNa1234",
     "totp_secret": "MZXW6YTBOJRGS===",
     "group_seed": 3976056
   },
