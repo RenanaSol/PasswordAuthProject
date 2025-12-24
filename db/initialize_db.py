@@ -78,16 +78,20 @@ def hash_password_without_pepper(password,method):
 
 conn = sqlite3.connect(DB_FILE)
 cursor = conn.cursor()
+cursor.execute(''' CREATE TABLE IF NOT EXISTS users ( id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, password_hash TEXT NOT NULL, salt TEXT, hash_type TEXT NOT NULL, created_at TEXT, totp_secret TEXT ) ''')
 cursor.execute("DELETE FROM users;")
 cursor.execute("DELETE FROM sqlite_sequence WHERE name='users';")
 conn.commit()
-for username, password, totp_secret in users.items():
+for username,  data in users.items():
+    password = data["password"]
+    totp_secret = data.get("totp_secret")
+    group_seed = data.get("group_seed")
     for h in hashTyps:   
         hashed, salt, hash_type = hash_password_with_pepper(password, h)
 
         cursor.execute("""
         INSERT INTO users (username, password_hash, salt, hash_type, created_at, totp_secret)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         """, (
             username,
             hashed,
@@ -97,12 +101,11 @@ for username, password, totp_secret in users.items():
             totp_secret
         ))
 
-        # --- בלי pepper ---
         hashed, salt, hash_type = hash_password_without_pepper(password, h)
 
         cursor.execute("""
         INSERT INTO users (username, password_hash, salt, hash_type, created_at,totp_secret)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         """, (
             username,
             hashed,

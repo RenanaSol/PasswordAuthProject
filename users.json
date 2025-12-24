@@ -4,35 +4,151 @@
     "totp_secret": "JBSWY3DPEHPK3PXP",
     "group_seed": 3976056
   },
-  "user2": "12345",
-  "john": "qwerty",
-  "alice": "111111",
-  "bob": "hello",
-  "mike": "easy6",
-  "sarah": "welcome",
-  "david": "iloveyou",
-  "admin": "admin",
-  "emily": "000000",
+  "user2": {
+    "password": "12345",
+    "totp_secret": "KRSXG5DSMFZWK3TJ",
+    "group_seed": 3976056
+  },
+  "john": {
+    "password": "qwerty",
+    "totp_secret": "NB2W45DFOIZA2XLP",
+    "group_seed": 3976056
+  },
+  "alice": {
+    "password": "111111",
+    "totp_secret": "MZXW6YTBOI======",
+    "group_seed": 3976056
+  },
+  "bob": {
+    "password": "hello",
+    "totp_secret": "ONSWG4TFOQ======",
+    "group_seed": 3976056
+  },
+  "mike": {
+    "password": "easy6",
+    "totp_secret": "KRUGS4ZANFZSAYJA",
+    "group_seed": 3976056
+  },
+  "sarah": {
+    "password": "welcome",
+    "totp_secret": "MFZXIYLCN5ZGK3TJ",
+    "group_seed": 3976056
+  },
+  "david": {
+    "password": "iloveyou",
+    "totp_secret": "JZXXE3DBNZQW4===",
+    "group_seed": 3976056
+  },
+  "admin": {
+    "password": "admin",
+    "totp_secret": "IFBEGRCFIZDUQ===",
+    "group_seed": 3976056
+  },
+  "emily": {
+    "password": "000000",
+    "totp_secret": "MFRGGZDFMZTWQ2LK",
+    "group_seed": 3976056
+  },
 
-  "charlie": "Password123",
-  "laura": "Summer2025",
-  "oliver": "HelloWorld!",
-  "nina": "Login1234",
-  "kevin": "MyPass99",
-  "linda": "admin543210",
-  "frank": "Secure12",
-  "zoe": "Loginlog!!",
-  "victor": "UserPass7!7",
-  "paul": "hello1234&",
+  "charlie": {
+    "password": "Password123",
+    "totp_secret": "KJXXEZDENFZSAYJA",
+    "group_seed": 3976056
+  },
+  "laura": {
+    "password": "Summer2025",
+    "totp_secret": "NB2HI4DTHIXS6===",
+    "group_seed": 3976056
+  },
+  "oliver": {
+    "password": "HelloWorld!",
+    "totp_secret": "O5XXE3DEONSW4===",
+    "group_seed": 3976056
+  },
+  "nina": {
+    "password": "Login1234",
+    "totp_secret": "MZXW6YTBOJRGS===",
+    "group_seed": 3976056
+  },
+  "kevin": {
+    "password": "MyPass99",
+    "totp_secret": "KRUGS4ZANFZSA===",
+    "group_seed": 3976056
+  },
+  "linda": {
+    "password": "admin543210",
+    "totp_secret": "JBSWY3DPFQQHO===",
+    "group_seed": 3976056
+  },
+  "frank": {
+    "password": "Secure12",
+    "totp_secret": "IFBEGRCFJZDUQ===",
+    "group_seed": 3976056
+  },
+  "zoe": {
+    "password": "Loginlog!!",
+    "totp_secret": "NB2W45DFOIZA====",
+    "group_seed": 3976056
+  },
+  "victor": {
+    "password": "UserPass7!7",
+    "totp_secret": "MFZXIYLCONSWG===",
+    "group_seed": 3976056
+  },
+  "paul": {
+    "password": "hello1234&",
+    "totp_secret": "MFRGGZDFNZTWQ===",
+    "group_seed": 3976056
+  },
 
-  "anna": "gshbdskjsJDKskdn",
-  "bruce": "X$4M!eQ8@Zp*L",
-  "catherine": "GDSJFHDhsbsb!@#$",
-  "derek": "13242553625735253716",
-  "elena": "daghGVAHGSVagsv1263562",
-  "fred": "SGDVAgahvdhgvAPDQRovd",
-  "gina": "R8#@Z!L2kP9VSH4#sbH",
-  "harry": "spenmakDsksjaaAhs82619",
-  "irene": "BSAHBansaaka@&**!@",
-  "julia": "9283924670286528"
+  "anna": {
+    "password": "gshbdskjsJDKskdn",
+    "totp_secret": "O5XXE3DEON2HE===",
+    "group_seed": 3976056
+  },
+  "bruce": {
+    "password": "X$4M!eQ8@Zp*L",
+    "totp_secret": "KRUGS4ZANFZSA2Q=",
+    "group_seed": 3976056
+  },
+  "catherine": {
+    "password": "GDSJFHDhsbsb!@#$",
+    "totp_secret": "JZXXE3DBNZQWY===",
+    "group_seed": 3976056
+  },
+  "derek": {
+    "password": "13242553625735253716",
+    "totp_secret": "IFBEGRCFIZDUQ2Q=",
+    "group_seed": 3976056
+  },
+  "elena": {
+    "password": "daghGVAHGSVagsv1263562",
+    "totp_secret": "MZXW6YTBOJRGS2Q=",
+    "group_seed": 3976056
+  },
+  "fred": {
+    "password": "SGDVAgahvdhgvAPDQRovd",
+    "totp_secret": "NB2HI4DTHIXS6YQ=",
+    "group_seed": 3976056
+  },
+  "gina": {
+    "password": "R8#@Z!L2kP9VSH4#sbH",
+    "totp_secret": "ONSWG4TFOQ======",
+    "group_seed": 3976056
+  },
+  "harry": {
+    "password": "spenmakDsksjaaAhs82619",
+    "totp_secret": "MFZXIYLCN5ZGK===",
+    "group_seed": 3976056
+  },
+  "irene": {
+    "password": "BSAHBansaaka@&**!@",
+    "totp_secret": "JBSWY3DPFQQHO2Q=",
+    "group_seed": 3976056
+  },
+  "julia": {
+    "password": "9283924670286528",
+    "totp_secret": "KRUGS4ZANFZSAYQ=",
+    "group_seed": 3976056
+  }
 }
