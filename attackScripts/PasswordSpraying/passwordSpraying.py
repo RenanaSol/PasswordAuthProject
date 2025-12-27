@@ -1,13 +1,14 @@
 import requests
 import json
 import os
+import random
 
 LOGIN_URL = "http://127.0.0.1:8000/login"
 
 usernames = [
     "user1",
     "user2",
-    "John",
+    "john",
     "charlie",
     "oliver",
     "nina",
@@ -27,7 +28,9 @@ def load_passwords():
         return []
     
     with open(PASSWORDS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+        passwords = json.load(f)
+    random.shuffle(passwords)
+    return passwords
 
 def password_spraying():
     session = requests.Session()

@@ -2,6 +2,7 @@ import logging
 import time
 import json
 import sqlite3
+import pyotp
 import uuid
 import os
 from collections import defaultdict, deque
@@ -32,14 +33,13 @@ CONFIG_FILE = "config.json"
 # load config
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "bcrypt"
-
-protection_flag = "CAPTCHA"
-totp_manager = TOTPManager(interval=30, digits=6)
-login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
-lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
+hash_type = "argon2"
 
 protection_flag = "TOTP"
+totp_manager = TOTPManager(interval=30, digits=6)
+login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
+lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)
+
 
 def get_user_from_db(username,hash_type ):
     conn = sqlite3.connect(DB_FILE)
@@ -47,7 +47,7 @@ def get_user_from_db(username,hash_type ):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT username, password_hash, salt, hash_type
+        SELECT username, password_hash, salt, hash_type , totp_secret
         FROM users
         WHERE 
         username = ?
@@ -189,7 +189,7 @@ def register():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-
+        totp_secret = pyotp.random_base32()
         if not username or not password:
             flash("Username and password are required.")
             return redirect(url_for("register"))
@@ -214,9 +214,9 @@ def register():
         password_hash, salt, returned_hash_type = hash_password_with_pepper(password, hash_type)
 
         cursor.execute("""
-            INSERT INTO users (username, password_hash, salt, hash_type)
-            VALUES (?, ?, ?, ?)
-        """, (username, password_hash, salt, hash_type))
+            INSERT INTO users (username, password_hash, salt, hash_type, totp_secret)
+            VALUES (?, ?, ?, ?, ?)
+        """, (username, password_hash, salt, hash_type, totp_secret))
 
         conn.commit()
         conn.close()
@@ -240,14 +240,13 @@ def login_totp():
         flash("Please login with username and password first.", "warning")
         return redirect(url_for("login"))
     
-    userdetails = load_users()
-    user_record = userdetails.get(pending_user)
-    if not user_record or not isinstance(user_record, dict):
-        flash("User not found.", "danger")
+    userdetails = get_user_from_db(pending_user, hash_type)
+    if userdetails is None:
+        flash("User not found in database.", "danger")
         session.pop("pending_2fa_user", None)
         return redirect(url_for("login"))
     
-    totp_secret = user_record.get("totp_secret")
+    totp_secret = userdetails.get("totp_secret")
     if not totp_secret:
         flash("Missing totp_secret for this user.", "danger")
         session.pop("pending_2fa_user", None)
