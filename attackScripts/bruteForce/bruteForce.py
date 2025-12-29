@@ -31,8 +31,10 @@ def run_brute_force():
         passwords = json.load(f)
 
     random.shuffle(passwords)
+    user_items = list(test_vectors.items())
+    #random.shuffle(user_items)
 
-    for username, correct_password in test_vectors.items():
+    for username in user_items:
 
         start = time.time()
         sent = 0

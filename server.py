@@ -23,6 +23,7 @@ captcha_mgr = CaptchaManager(threshold=3)
 failed_attempts_captcha = {}
 GROUP_SEED = 3976056
 CAPTCHA_THRESHOLD = 3
+PENDING_2FA_TIMEOUT = 120  # seconds
 
 app = Flask(__name__)
 app.secret_key = "mysecret"
@@ -174,6 +175,7 @@ def login():
         elif protection_flag == "TOTP":
             session["pending_2fa_user"] = username
             session["pending_2fa_seed"] = GROUP_SEED
+            session["pending_2fa_started_at"] = time.time()
             flash("Password verified. Please enter your TOTP code.", "info")
             return redirect(url_for("login_totp"))
         
@@ -236,6 +238,16 @@ def logout():
 @app.route("/login_totp", methods=["GET", "POST"])
 def login_totp():
     pending_user = session.get("pending_2fa_user")
+    started_at = session.get("pending_2fa_started_at")
+
+    if not started_at or (time.time() - started_at) > PENDING_2FA_TIMEOUT:
+        session.pop("pending_2fa_user", None)
+        session.pop("pending_2fa_seed", None)
+        session.pop("pending_2fa_started_at", None)
+
+        flash("TOTP session expired. Please login again.", "warning")
+        return redirect(url_for("login"))
+    
     if not pending_user:
         flash("Please login with username and password first.", "warning")
         return redirect(url_for("login"))
