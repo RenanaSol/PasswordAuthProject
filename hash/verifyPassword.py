@@ -7,11 +7,15 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
 from loginDefence.lockout.accountLockout import AccountLockoutManager
-
+CONFIG_FILE = "config.json"
 
 def verify_argon2(password, stored_hash, pepper):
     print ("in argon2")
-    ph = PasswordHasher()
+    ph = PasswordHasher(
+        time_cost= CONFIG_FILE.get("argon2_time_cost"),
+        memory_cost= CONFIG_FILE.get("argon2_memory_cost"),
+        parallelism= CONFIG_FILE.get ("argon2_parallelism")
+    )
     password_peppered = password + pepper
     try:
         return ph.verify(stored_hash, password_peppered)

