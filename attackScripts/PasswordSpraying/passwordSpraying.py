@@ -33,7 +33,6 @@ def load_passwords():
     random.shuffle(passwords)
     return passwords
 
-
 def password_spraying():
     session = requests.Session()
     passwords = load_passwords()

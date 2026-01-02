@@ -18,6 +18,7 @@ try:
                 break
             passwords_list.append(line.strip())
 
+
     with open(output_path, 'w', encoding='utf-8') as outfile:
         json.dump(passwords_list, outfile, indent=4, ensure_ascii=False)
     
