@@ -3,8 +3,6 @@ import time
 import json
 import sqlite3
 import pyotp
-import uuid
-import os
 from collections import defaultdict, deque
 from flask import Flask, request, redirect, url_for, session, render_template, flash, jsonify
 from werkzeug.security import  check_password_hash
@@ -34,9 +32,9 @@ CONFIG_FILE = "config.json"
 # load config
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "argon2"
+hash_type = "bcrypt"
 
-protection_flag = "TOTP"
+protection_flag = ""
 totp_manager = TOTPManager(interval=30, digits=6)
 login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
 lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)
