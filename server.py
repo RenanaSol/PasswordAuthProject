@@ -32,14 +32,14 @@ CONFIG_FILE = "config.json"
 # load config
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "bcrypt"
+hash_type = "argon2"
 
 protection_flag = "CAPTCHA"
 totp_manager = TOTPManager(interval=30, digits=6)
 login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
-lockout_manager = AccountLockoutManager(max_failed_attempts=3, lockout_seconds=60)
+lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)
 
-protection_flag = "TOTP"
+
 
 def get_user_from_db(username,hash_type ):
     conn = sqlite3.connect(DB_FILE)
@@ -83,8 +83,9 @@ def get_captcha_token():
 def login():
     if request.method == "POST":
         userIP = request.remote_addr or "unknown"
-        is_pepper = False
+        is_pepper = True
         captcha_token = ""
+        latency_ms = 0.0
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         lockout_key = f"{username}:{userIP}"

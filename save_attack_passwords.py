@@ -16,11 +16,9 @@ try:
             line = infile.readline()
             if not line:
                 break
-            passwords_list.append(line.strip()) # strip מנקה רווחים וירידות שורה
-
+            passwords_list.append(line.strip())
 
     with open(output_path, 'w', encoding='utf-8') as outfile:
-        # indent=4 הופך את הקובץ לקריא לעין אנושית
         json.dump(passwords_list, outfile, indent=4, ensure_ascii=False)
     
     print(f"Success! Created {output_path} with {len(passwords_list)} passwords.")
