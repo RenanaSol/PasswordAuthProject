@@ -3,8 +3,6 @@ import time
 import json
 import sqlite3
 import pyotp
-import uuid
-import os
 from collections import defaultdict, deque
 from flask import Flask, request, redirect, url_for, session, render_template, flash, jsonify
 from werkzeug.security import  check_password_hash
@@ -23,7 +21,7 @@ captcha_mgr = CaptchaManager(threshold=3)
 failed_attempts_captcha = {}
 GROUP_SEED = 3976056
 CAPTCHA_THRESHOLD = 3
-PENDING_2FA_TIMEOUT = 120  # seconds
+PENDING_2FA_TIMEOUT = 120  
 
 app = Flask(__name__)
 app.secret_key = "mysecret"
@@ -31,7 +29,7 @@ app.secret_key = "mysecret"
 DB_FILE = "db/users.db"
 CONFIG_FILE = "config.json"
 
-# load config
+
 config = json.load(open(CONFIG_FILE))
 
 hash_type = "argon2"
@@ -73,7 +71,7 @@ def index():
 @app.route('/admin/get_captcha_token', methods=['GET'])
 def get_captcha_token():
    
-    seed = request.args.get('group_seed')
+    seed = int(request.args.get('group_seed'))
     if seed != GROUP_SEED:
         return jsonify({"error": "Unauthorized seed"}), 403
     
@@ -84,26 +82,43 @@ def get_captcha_token():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        start_time = time.perf_counter()
         userIP = request.remote_addr or "unknown"
-        is_pepper = True
+        is_pepper = False
         captcha_token = ""
-        latency_ms = 0.0
+        latency_ms = 0
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         lockout_key = f"{username}:{userIP}"
-       
-       
-        if protection_flag == "CAPTCHA":
-            captcha_token = request.form.get('captcha_token')
-            attempts = failed_attempts_captcha.get(username, 0)
-            if attempts >= CAPTCHA_THRESHOLD:
-                    flash("CAPTCHA required")
-                    if not captcha_token or captcha_token not in VALID_CAPTCHA_TOKENS:
-                        flash("CAPTCHA required")
-                        return redirect(url_for("login"))
-                    VALID_CAPTCHA_TOKENS.remove(captcha_token)
         
+       
+    
+        if protection_flag == "CAPTCHA":
+            attempts = failed_attempts_captcha.get(username, 0)
+            if attempts +1 >= CAPTCHA_THRESHOLD:
+                session.clear()
+                captcha_token = request.form.get('captcha_token') 
 
+                if not captcha_token:
+                    end_time = time.perf_counter()
+                    latency_ms = (end_time - start_time) * 1000  
+                    log_login_attempt(username, False, latency_ms, is_pepper, hash_type, protection_flag, GROUP_SEED)
+                    flash("CAPTCHA required")
+                    return render_template("login.html", captcha_required=True)
+                   
+            
+                if captcha_token not in VALID_CAPTCHA_TOKENS:
+                    end_time = time.perf_counter()
+                    latency_ms = (end_time - start_time) * 1000  
+                    log_login_attempt(username, False, latency_ms, is_pepper, hash_type, protection_flag, GROUP_SEED)
+                    flash("Invalid CAPTCHA token")
+                    return render_template("login.html", captcha_required=True)
+                
+                VALID_CAPTCHA_TOKENS.remove(captcha_token)
+                failed_attempts_captcha[username] = 0
+                flash("CAPTCHA solved")
+
+        
         if protection_flag == "LOCKOUT":
             if lockout_manager.is_locked(lockout_key):
                 remaining = int(lockout_manager.get_remaining_lock_time(lockout_key))
@@ -112,16 +127,12 @@ def login():
                     f"Please wait {remaining} seconds and try again.",
                     "danger"
                 )
-                latency_ms = 0
+                end_time = time.perf_counter()
+                latency_ms = (end_time - start_time) * 1000  
                 log_login_attempt(username, False, latency_ms, is_pepper, hash_type, protection_flag, GROUP_SEED)
+                session.clear()
                 return redirect(url_for("login"))
     
-        elif protection_flag == "CAPTCHA":
-            print ("")
-
-        elif protection_flag == "TOTP":
-            print ("")
-
         elif protection_flag == "RATE_LIMIT":
             if not login_rate_limiter.allow(lockout_key):
                 flash("Too many login attempts. Please try again later.")
@@ -134,15 +145,14 @@ def login():
         userdetails = get_user_from_db (username, hash_type ) 
         
         if userdetails is None:
-            latency_ms = 0
+            end_time = time.perf_counter()
+            latency_ms = (end_time - start_time) * 1000  
             log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
             flash("User does not exist.")
             return redirect(url_for("login"))   
-        
-    
 
         try:     
-            result , latency_ms  = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
+            result   = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
             if not result:              
                 if protection_flag == "LOCKOUT":
                     lockout_manager.register_failure(lockout_key)
@@ -154,17 +164,24 @@ def login():
                 elif protection_flag == "CAPTCHA":                       
                     failed_attempts_captcha[username] = failed_attempts_captcha.get(username, 0) + 1   
                     
-                        
+                end_time = time.perf_counter()
+                latency_ms = (end_time - start_time) * 1000        
                 log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
                 flash("Wrong password.")
                 return redirect(url_for("login"))
+        
         except VerifyMismatchError:  
+            end_time = time.perf_counter()
+            latency_ms = (end_time - start_time) * 1000  
             log_login_attempt(username,False,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
+        
         except Exception as e: 
             logging.error(f"Error verifying password for {username}: {e}")
             flash("An error occurred. Please try again.")
             return redirect(url_for("login"))
-     
+
+        end_time = time.perf_counter()
+        latency_ms = (end_time - start_time) * 1000        
         log_login_attempt(username,True,latency_ms,is_pepper,hash_type,protection_flag,GROUP_SEED)
         flash("Logged in successfully.")
 
@@ -268,14 +285,11 @@ def login_totp():
     
     if request.method == "POST":
         token = request.form.get("totp", "").strip()
-
-        # Verify TOTP
         server_now = time.time()
         if not totp_manager.verify(totp_secret, token, server_time=server_now, valid_window=1):
             flash("Invalid TOTP code.", "danger")
             return redirect(url_for("login_totp"))
     
-        #Success: finalize login
         session.pop("pending_2fa_user", None)
         session["username"] = pending_user
         session["group_seed"] = session.pop("pending_2fa_seed", GROUP_SEED)

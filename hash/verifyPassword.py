@@ -3,19 +3,22 @@ import bcrypt
 import hashlib
 import base64
 import hmac
+import json
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
 from loginDefence.lockout.accountLockout import AccountLockoutManager
 CONFIG_FILE = "config.json"
+config = json.load(open(CONFIG_FILE))
+
 
 def verify_argon2(password, stored_hash, pepper):
-    print ("in argon2")
+    security = config.get("security", {})
     ph = PasswordHasher(
-        time_cost= CONFIG_FILE.get("argon2_time_cost"),
-        memory_cost= CONFIG_FILE.get("argon2_memory_cost"),
-        parallelism= CONFIG_FILE.get ("argon2_parallelism")
-    )
+            time_cost=security.get("argon2_time_cost", 1),
+            memory_cost=security.get("argon2_memory_cost", 65536),
+            parallelism=security.get("argon2_parallelism", 1),
+        )
     password_peppered = password + pepper
     try:
         return ph.verify(stored_hash, password_peppered)
@@ -49,45 +52,27 @@ def verify_bcrypt(password, stored_hash, pepper):
 
 def verify_password(password, stored_hash, hash_type, salt, pepper):
     if hash_type == "argon2":
-        start = time.perf_counter()
         result = verify_argon2(password, stored_hash, "")
-        end = time.perf_counter()
-        latency_ms = (end - start) * 1000
-        return result, latency_ms
+        return result
     
     elif hash_type == "bcrypt":
-        start = time.perf_counter()
         result = verify_bcrypt(password, stored_hash, "")
-        end = time.perf_counter()
-        latency_ms = (end - start) * 1000
-        return result, latency_ms
+        return result
     
     elif hash_type == "sha256_salt": 
-        start = time.perf_counter()
         result = verify_sha256(password, stored_hash, salt, "")
-        end = time.perf_counter()
-        latency_ms = (end - start) * 1000
-        return result, latency_ms
+        return result
     
     elif hash_type == "argon2_pepper": 
-        start = time.perf_counter()
         result = verify_argon2(password, stored_hash, pepper)
-        end = time.perf_counter()
-        latency_ms = (end - start) * 1000
-        return result, latency_ms
+        return result
     
     elif hash_type == "bcrypt_pepper":
-        start = time.perf_counter()
         result = verify_bcrypt_with_hmac_sha384(password, stored_hash, pepper)
-        end = time.perf_counter()
-        latency_ms = (end - start) * 1000
-        return result, latency_ms
+        return result
     
     elif hash_type == "sha256_salt_pepper": 
-        start = time.perf_counter()
         result = verify_sha256(password, stored_hash, salt, pepper)
-        end = time.perf_counter()
-        latency_ms = (end - start) * 1000
-        return result, latency_ms    
+        return result    
     else:
         raise ValueError(f"Unknown hash type: {hash_type}")
