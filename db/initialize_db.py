@@ -17,17 +17,19 @@ with open(USERS_JSON, "r") as f:
 DB_FILE = "db/users.db"
 CONFIG_FILE = "config.json"
 
+config = json.load(open(CONFIG_FILE))
+
 print("Using DB file at:", os.path.abspath(DB_FILE))
 
 hashTyps= ["argon2","bcrypt","sha256_salt"]
 
 
-config = json.load(open(CONFIG_FILE))
 
 security = config.get("security", {})
 
 
 def hash_argon2(password):
+    security = config.get("security", {})
     ph = PasswordHasher(
     time_cost=security.get("argon2_time_cost", 1),
     memory_cost=security.get("argon2_memory_cost", 65536),
@@ -48,8 +50,10 @@ def bcrypt_with_hmac_sha384(password: str, pepper: str, cost: int = 12) -> str:
     )
 
     return bcrypt_hash.decode(),None, "bcrypt"
+
 def hash_bcrypt(password):
-    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=config.get("bcrypt_cost", 12)))
+    security = config.get("security", {})
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=security.get("bcrypt_cost", 12)))
     return hashed.decode(), None, "bcrypt"
 
 def hash_sha256(password):
