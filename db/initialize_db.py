@@ -24,11 +24,14 @@ hashTyps= ["argon2","bcrypt","sha256_salt"]
 
 config = json.load(open(CONFIG_FILE))
 
+security = config.get("security", {})
+
+
 def hash_argon2(password):
     ph = PasswordHasher(
-        time_cost= CONFIG_FILE.get("argon2_time_cost"),
-        memory_cost= CONFIG_FILE.get("argon2_memory_cost"),
-        parallelism= CONFIG_FILE.get ("argon2_parallelism")
+    time_cost=security.get("argon2_time_cost", 1),
+    memory_cost=security.get("argon2_memory_cost", 65536),
+    parallelism=security.get("argon2_parallelism", 1),
     )
     return ph.hash(password), None, "argon2"
 

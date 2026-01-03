@@ -3,18 +3,20 @@ import bcrypt
 import hashlib
 import base64
 import hmac
+import json
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
-from loginDefence.lockout.accountLockout import AccountLockoutManager
+
 CONFIG_FILE = "config.json"
+config = json.load(open(CONFIG_FILE))
+security = config.get("security", {})
 
 def verify_argon2(password, stored_hash, pepper):
     print ("in argon2")
     ph = PasswordHasher(
-        time_cost= CONFIG_FILE.get("argon2_time_cost"),
-        memory_cost= CONFIG_FILE.get("argon2_memory_cost"),
-        parallelism= CONFIG_FILE.get ("argon2_parallelism")
+    time_cost=security.get("argon2_time_cost", 1),
+    memory_cost=security.get("argon2_memory_cost", 65536),
+    parallelism=security.get("argon2_parallelism", 1),
     )
     password_peppered = password + pepper
     try:

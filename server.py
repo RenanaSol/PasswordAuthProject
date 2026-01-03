@@ -32,9 +32,9 @@ CONFIG_FILE = "config.json"
 # load config
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "bcrypt"
+hash_type = "bcrypt"  
 
-protection_flag = "CAPTCHA"
+protection_flag = "" 
 totp_manager = TOTPManager(interval=30, digits=6)
 login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
 lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)

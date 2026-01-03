@@ -11,8 +11,8 @@ MAX_REQUESTS_PER_USER = 50000
 MAX_SECONDS_PER_USER = 60 * 60 * 2
 
 test_vectors = {
-    "user1": {"correct": "password"},
     "user2": {"correct": "12345"},
+    "user1": {"correct": "password"},
     "john": {"correct": "qwerty"},
     "charlie": {"correct": "Password123"},
     "oliver": {"correct": "HelloWorld!"},
@@ -60,7 +60,7 @@ def run_brute_force():
 
             if ((r.status_code == 302 and "/login" not in r.headers.get("Location", "") ) or sent == 50000):
                     print(f"[SUCCESS] cracked user: {username}")
-                    return 1
+                    break
             
 
 result = run_brute_force()
