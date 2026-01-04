@@ -32,9 +32,9 @@ CONFIG_FILE = "config.json"
 
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "bcrypt"  
+hash_type = "argon2"  
 
-protection_flag = "" 
+protection_flag = "CAPTCHA" 
 totp_manager = TOTPManager(interval=30, digits=6)
 login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
 lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)
@@ -70,13 +70,18 @@ def index():
 
 @app.route('/admin/get_captcha_token', methods=['GET'])
 def get_captcha_token():
-   
-    seed = int(request.args.get('group_seed'))
+    seed_raw = request.args.get('group_seed')
+    if seed_raw is None:
+        return jsonify({"error": "missing group_seed"}), 400
+    try:
+        seed = int(seed_raw)
+    except ValueError:
+        return jsonify({"error": "group_seed must be an integer"}), 400
+
     if seed != GROUP_SEED:
         return jsonify({"error": "Unauthorized seed"}), 403
-    
-    new_token = f"token_{int(time.time()*1000)}"
-    VALID_CAPTCHA_TOKENS.add(new_token)
+
+    new_token = captcha_mgr.issue_token()
     return jsonify({"captcha_token": new_token})
 
 @app.route("/login", methods=["GET", "POST"])
@@ -91,32 +96,32 @@ def login():
         password = request.form.get("password", "")
         lockout_key = f"{username}:{userIP}"
         
-       
     
         if protection_flag == "CAPTCHA":
-            attempts = failed_attempts_captcha.get(username, 0)
-            if attempts +1 >= CAPTCHA_THRESHOLD:
-                session.clear()
-                captcha_token = request.form.get('captcha_token') 
+            if captcha_mgr.is_captcha_required(username):
+                captcha_token = request.form.get("captcha_token")
 
                 if not captcha_token:
+                    session["pending_captcha_user"] = username
+                    session["captcha_required"] = True
+
                     end_time = time.perf_counter()
-                    latency_ms = (end_time - start_time) * 1000  
+                    latency_ms = (end_time - start_time) * 1000
                     log_login_attempt(username, False, latency_ms, is_pepper, hash_type, protection_flag, GROUP_SEED)
+
                     flash("CAPTCHA required")
-                    return render_template("login.html", captcha_required=True)
-                   
-            
-                if captcha_token not in VALID_CAPTCHA_TOKENS:
+                    return render_template("login.html", captcha_required=True, username_prefill=username)
+
+                if not captcha_mgr.consume_token(captcha_token):
+                    session["pending_captcha_user"] = username
+                    session["captcha_required"] = True
+
                     end_time = time.perf_counter()
-                    latency_ms = (end_time - start_time) * 1000  
+                    latency_ms = (end_time - start_time) * 1000
                     log_login_attempt(username, False, latency_ms, is_pepper, hash_type, protection_flag, GROUP_SEED)
-                    flash("Invalid CAPTCHA token")
-                    return render_template("login.html", captcha_required=True)
-                
-                VALID_CAPTCHA_TOKENS.remove(captcha_token)
-                failed_attempts_captcha[username] = 0
-                flash("CAPTCHA solved")
+
+                    flash("Invalid or expired CAPTCHA token")
+                    return render_template("login.html", captcha_required=True, username_prefill=username)
 
         
         if protection_flag == "LOCKOUT":
@@ -152,7 +157,7 @@ def login():
             return redirect(url_for("login"))   
 
         try:     
-            result   = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
+            result = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
             if not result:              
                 if protection_flag == "LOCKOUT":
                     lockout_manager.register_failure(lockout_key)
@@ -162,7 +167,7 @@ def login():
                         f"Please wait {remaining} seconds and try again.", "danger")
 
                 elif protection_flag == "CAPTCHA":                       
-                    failed_attempts_captcha[username] = failed_attempts_captcha.get(username, 0) + 1   
+                   captcha_mgr.register_failure(username)  
                     
                 end_time = time.perf_counter()
                 latency_ms = (end_time - start_time) * 1000        
@@ -189,7 +194,7 @@ def login():
             lockout_manager.register_success(lockout_key)
 
         if protection_flag == "CAPTCHA":
-                failed_attempts_captcha[username] = 0
+            captcha_mgr.reset(username)
         
         elif protection_flag == "TOTP":
             session["pending_2fa_user"] = username
@@ -200,9 +205,14 @@ def login():
         
         session["username"] = username
         session["group_seed"] = GROUP_SEED
+        session.pop("pending_captcha_user", None)
+        session.pop("captcha_required", None)
         return redirect(url_for("index"))
 
-    return render_template("login.html")
+    username_prefill = session.get("pending_captcha_user", "")
+    captcha_required = session.get("captcha_required", False)
+    return render_template("login.html", username_prefill=username_prefill, captcha_required=captcha_required)
+
 
 
 @app.route("/register", methods=["GET", "POST"])
