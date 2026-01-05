@@ -25,14 +25,16 @@ hashTyps= ["argon2","bcrypt","sha256_salt"]
 
 
 
+security = config.get("security", {})
+
+
 def hash_argon2(password):
     security = config.get("security", {})
     ph = PasswordHasher(
-            time_cost=security.get("argon2_time_cost", 1),
-            memory_cost=security.get("argon2_memory_cost", 65536),
-            parallelism=security.get("argon2_parallelism", 1),
-)
-   
+    time_cost=security.get("argon2_time_cost", 1),
+    memory_cost=security.get("argon2_memory_cost", 65536),
+    parallelism=security.get("argon2_parallelism", 1),
+    )
     return ph.hash(password), None, "argon2"
 
 def bcrypt_with_hmac_sha384(password: str, pepper: str, cost: int = 12) -> str:
