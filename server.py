@@ -32,9 +32,8 @@ CONFIG_FILE = "config.json"
 
 config = json.load(open(CONFIG_FILE))
 
-hash_type = "argon2"
-
-protection_flag = "CAPTCHA"
+hash_type = "sha256_salt"
+protection_flag = ""
 totp_manager = TOTPManager(interval=30, digits=6)
 login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
 lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)
@@ -152,7 +151,7 @@ def login():
             return redirect(url_for("login"))   
 
         try:     
-            result   = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
+            result  = verify_password(password, userdetails["password_hash"], hash_type, userdetails["salt"], PEPPER)
             if not result:              
                 if protection_flag == "LOCKOUT":
                     lockout_manager.register_failure(lockout_key)
