@@ -1,57 +1,37 @@
-# passwordAuthProject
+# 🛡️ Password Authentication & Security Research Project
 
-A clean and simple web app demonstrating user registration, login, logout, and a protected page using Python’s Flask framework.
-
-**Features**
-- **Password hashing & verification**: secure password hashing utilities in `hash/`.
-- **TOTP**: Time-based one-time password support in `loginDefence/totp/`.
-- **Rate limiting & token bucket**: per-IP and per-account throttling in `loginDefence/rateLimit/`.
-- **Account lockout**: account lockout policies in `loginDefence/lockout/`.
-- **DB initialization**: lightweight DB setup in `db/initialize_db.py`.
-
-**Repository layout (important files)**
-- `server.py`: Main application entrypoint (starts the auth server).
-- `config.json`: Configuration for app settings (ports, rate limits, secrets).
-- `users.json`: Simple user store used by the demo.
-- `usersHandle.py`, `logHandle.py`: helpers for user and logging operations.
-- `hash/`: password hashing and verification helpers.
-- `loginDefence/`: defence mechanisms (rate limiting, lockout, TOTP).
-- `db/`: DB initialization scripts.
-- `attackScripts/`: example attack scripts for testing (brute force, password spraying).
-
-**Requirements**
-- Python 3.8+
+A research and development project examining the resilience of authentication systems against various attack vectors. The system demonstrates the use of modern hashing algorithms combined with active defense layers to prevent Brute-Force and Password Spraying attacks.
 
 
-Security notes
-- This project is a learning system.
 
+## 🚀 Key Features
 
-## ✨ Features
-
-- 🔐 Register with username & password  
-- 🔑 Login using valid credentials  
-- 🛡️ Passwords stored **securely (hashed, never plain text)**  
-- 👤 Persistent user session using Flask sessions  
-- 🚫 Protected `/secret` page accessible only when logged in  
-- 📄 Organized project structure with Jinja template inheritance  
+- **Hashing Mechanisms:** Comparison between Argon2id, Bcrypt, and SHA-256 (including Salt and Pepper).
+- **Defense in Depth:**
+    - ⏳ **Rate Limiting:** Request throttling based on the Token Bucket algorithm.
+    - 🔒 **Account Lockout:** Automatic account locking after a sequence of failed attempts.
+    - 🧩 **CAPTCHA:** Logical verification mechanism to prevent bots and automated scripts.
+    - 📱 **TOTP (2FA):** Time-based One-Time Password support (RFC 6238).
+- **Monitoring System (Logging):** Detailed documentation of response times (Latency) and experiment results for statistical analysis.
+- **Attack Tools:** Dedicated scripts for simulating Brute-Force attacks to test system resilience.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 PasswordAuthProject/
 │
-├── servey.py               # Main Flask server
+├── server.py              # Main Flask-based server
+├── config.json            # Security configuration (algorithms, rate limits, secrets)
+├── usersHandle.py         # User management and validation logic
+├── logHandle.py           # Logging and monitoring system
 │
-└── templates/
-    ├── layout.html         # Base template
-    ├── index.html          # Home / landing page
-    ├── login.html          # Login form
-    ├── register.html       # Registration form
-    └── secret.html         # Protected page
-```
+├── hash/                  # Hashing function implementations (Argon2, Bcrypt, SHA)
+├── loginDefence/          # Defense mechanisms (Rate Limit, Lockout, TOTP, CAPTCHA)
+├── db/                    # Database initialization and management scripts (SQLite3)
+├── attackScripts/         # Scripts simulating Brute-Force and Password Spraying attacks
+└── templates/             # User Interface (Jinja2 HTML Templates)
 
 ---
 
@@ -59,11 +39,13 @@ PasswordAuthProject/
 
 - Python **3.8+**
 - Flask
+- argon2, bcrypt, pyotp
 
 Install dependencies:
 
 ```bash
 pip install flask
+pip install flask argon2-cffi bcrypt pyotp requests
 ```
 
 ---
@@ -71,6 +53,7 @@ pip install flask
 ## ▶️ Running the Application
 
 ```bash
+python db/initialize_db.py
 python servey.py
 ```
 
@@ -82,39 +65,6 @@ http://127.0.0.1:8000/
 
 ---
 
-## 🔐 Authentication Flow
+This project was developed for educational and research purposes only. The code demonstrates security principles but is not intended for use in Production systems without further adjustments and comprehensive penetration testing.
 
-### Registration
-- Password is hashed with Werkzeug.
-- User saved in a simple in-memory dictionary.
-
-### Login
-- Password verified with `check_password_hash`.
-- Username stored in Flask session.
-
-### Protected Route
-- `/secret` only loads if logged in.
-
-### Logout
-- Removes the username from session.
-
----
-
-## 🧠 Password Security
-
-Uses hashed passwords:
-
-```python
-check_password_hash(stored_hash, input)
-```
-
----
-
-## 🎨 Templates
-
-Uses Jinja2 with template inheritance:
-
-```html
-{% extends "layout.html" %}
-{% block content %}{% endblock %}
-```
+Developers- Aya Santandreu and Renana Solomon

@@ -1,17 +1,11 @@
 {
   "security": {
     "hash_method": "sha256", 
-
     "sha256_salt_length": 32,
-
     "bcrypt_cost": 12,
-
     "argon2_time_cost": 1,
     "argon2_memory_cost": 65536,
     "argon2_parallelism": 1
   },
-
   "pepper": "e29a840fff92bdf3590a4e79c87a10a3b75bc91cac9ce8327e2fd9272f73e80f"
-
-
 }
